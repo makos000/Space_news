@@ -3,17 +3,22 @@ package com.example.tech_test.app
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.example.tech_test.model.Space_ModelItem
 import com.example.tech_test.repo.RepoInterface
+import com.example.tech_test.repo.getOrAwaitValue
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.*
+import okhttp3.ResponseBody.Companion.toResponseBody
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
 import org.mockito.Mock
-import org.mockito.Mockito
 import org.mockito.MockitoAnnotations
+import org.mockito.kotlin.whenever
 import retrofit2.Response
 
 class MainViewModelTest {
@@ -53,39 +58,41 @@ class MainViewModelTest {
         Dispatchers.resetMain()
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+
     @Test
-    fun getData() {
-        val expectedResult = listOf(spaceModelItem)
-        runTest {
-            // Given
-            Mockito.`when`(mockRepo.getData()).thenReturn(
-                Response.success(
-                    arrayListOf(
-                        spaceModelItem
-                    )
-                )
-            )
+    fun `get successful response`() = runBlocking{
+        val expectedResult = Response.success(arrayListOf(spaceModelItem))
+        whenever(mockRepo.getData()).thenReturn(expectedResult)
 
-            viewModel.getData()
-            delay(2000)
-            // When
-            val actualResult = viewModel.data.value
-
-            // Then
-            Assert.assertEquals(expectedResult, actualResult)
+        viewModel.getData()
+        delay(20)
+        viewModel.data.observeForever {
+            assertEquals(arrayListOf(spaceModelItem), it)
         }
     }
 
-   /* @Test
-    fun `get succesful response`() = runBlocking{
-        val expectedResult = Response.success(arrayListOf(article))
+    @Test
+    fun `get error response`() = runBlocking{
+        val expectedResult = Response.error<ArrayList<Space_ModelItem>>(404, "error".toResponseBody() )
+        whenever(mockRepo.getData()).thenReturn(expectedResult)
+
+        viewModel.getData()
+        delay(20)
+
+        viewModel.data.observeForever {
+            assertEquals("error", it)
+        }
+    }
+
+    @Test
+    fun `get error response attempt with getorwaitvalue`() = runBlocking{
+        val expectedResult = Response.error<ArrayList<Space_ModelItem>>(404, "error".toResponseBody() )
         whenever(mockRepo.getData()).thenReturn(expectedResult)
 
         viewModel.getData()
 
-        viewModel.data.observeForever {
-            assertEquals(expectedResult, it)
-        }
-    }*/
+        val result = viewModel.data.getOrAwaitValue()
+
+        assertEquals("error", result)
+    }
 }
