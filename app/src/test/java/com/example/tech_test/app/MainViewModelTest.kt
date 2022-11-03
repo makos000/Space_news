@@ -1,9 +1,13 @@
 package com.example.tech_test.app
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import com.example.tech_test.api.ApiInterface
 import com.example.tech_test.model.Space_ModelItem
+import com.example.tech_test.repo.FakeRepo
 import com.example.tech_test.repo.RepoInterface
-import com.example.tech_test.repo.getOrAwaitValue
+import com.example.tech_test.room.ArticleDao
+import com.example.tech_test.room.ArticleEntity
+import junit.framework.TestCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -24,7 +28,9 @@ import retrofit2.Response
 class MainViewModelTest {
 
     private lateinit var viewModel: MainViewModel
+    private lateinit var fakeRepo: FakeRepo
     private val testDispatcher = StandardTestDispatcher()
+
 
     @get:Rule
     var instantTaskExecutorRule = InstantTaskExecutorRule()//For LiveData
@@ -46,11 +52,18 @@ class MainViewModelTest {
     @Mock
     private lateinit var mockRepo: RepoInterface
 
+    @Mock
+    private lateinit var dao: ArticleDao
+
+    @Mock
+    private lateinit var api: ApiInterface
+
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         MockitoAnnotations.openMocks(this)
         viewModel = MainViewModel(mockRepo)
+        fakeRepo = FakeRepo(dao,api)
     }
 
     @After
@@ -84,15 +97,24 @@ class MainViewModelTest {
         }
     }
 
+
     @Test
-    fun `get error response attempt with getorwaitvalue`() = runBlocking{
-        val expectedResult = Response.error<ArrayList<Space_ModelItem>>(404, "error".toResponseBody() )
-        whenever(mockRepo.getData()).thenReturn(expectedResult)
-
-        viewModel.getData()
-
-        val result = viewModel.data.getOrAwaitValue()
-
-        assertEquals("error", result)
+    fun `get list from fakerepo with space model object after insertArticlesToDB`() = runBlocking{
+        val expected = arrayListOf(spaceModelItem)
+        fakeRepo.insertArticlesToDB(ArticleEntity(spaceModelItem))
+        TestCase.assertEquals(expected, fakeRepo.list)
     }
+
+    @Test
+    fun `get empty list of ArticleEntity from flow collect of fake repo`() = runBlocking{
+        val expected = listOf<ArticleEntity>()
+        fakeRepo.insertArticlesToDB(ArticleEntity(spaceModelItem))
+        val result = fakeRepo.readArticlesFromDB()
+        result.collect(){
+            TestCase.assertEquals(expected, it)
+        }
+
+    }
+
+
 }
