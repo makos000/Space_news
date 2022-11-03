@@ -1,9 +1,5 @@
 package com.example.tech_test.app.main_fragment
 
-import android.content.Context
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
-import android.os.Build
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
@@ -13,6 +9,7 @@ import com.example.tech_test.R
 import com.example.tech_test.app.MainViewModel
 import com.example.tech_test.databinding.FragmentMainBinding
 import com.example.tech_test.model.Space_ModelItem
+import com.example.tech_test.util.CheckNetwork
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -28,7 +25,7 @@ class MainFragment: Fragment(R.layout.fragment_main) {
 
         val viewModel by viewModels<MainViewModel>()
 
-
+        val networkObj = CheckNetwork()
 
         binding = FragmentMainBinding.bind(view)
 
@@ -37,7 +34,7 @@ class MainFragment: Fragment(R.layout.fragment_main) {
         recycler.layoutManager = layoutManager
 
 
-        if (isNetworkAvailable(requireActivity())){
+        if (networkObj.isNetworkAvailable(requireActivity())){
             viewModel.getData()
             viewModel.data.observe(requireActivity()){
                 adapter = MainAdapter(it,requireActivity())
@@ -60,32 +57,5 @@ class MainFragment: Fragment(R.layout.fragment_main) {
 
 
 
-    }
-
-    private fun isNetworkAvailable(context: Context?): Boolean {
-        if (context == null) return false
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val capabilities = connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
-            if (capabilities != null) {
-                when {
-                    capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> {
-                        return true
-                    }
-                    capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> {
-                        return true
-                    }
-                    capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> {
-                        return true
-                    }
-                }
-            }
-        } else {
-            val activeNetworkInfo = connectivityManager.activeNetworkInfo
-            if (activeNetworkInfo != null && activeNetworkInfo.isConnected) {
-                return true
-            }
-        }
-        return false
     }
 }
