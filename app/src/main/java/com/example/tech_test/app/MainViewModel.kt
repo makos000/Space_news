@@ -17,8 +17,11 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor(val repoInterface: RepoInterface): ViewModel() {
 
-    val _data: MutableLiveData<ArrayList<Space_ModelItem>> = MutableLiveData(arrayListOf())
+    private val _data: MutableLiveData<ArrayList<Space_ModelItem>> = MutableLiveData(arrayListOf())
+    val data: LiveData<ArrayList<Space_ModelItem>> = _data
     var recycler_list : ArrayList<Space_ModelItem> = arrayListOf()
+    var _readArticle: LiveData<List<ArticleEntity>> = MutableLiveData(arrayListOf())
+    var readArticle: LiveData<List<ArticleEntity>> = _readArticle
 
 
     fun getData(){
@@ -48,6 +51,10 @@ class MainViewModel @Inject constructor(val repoInterface: RepoInterface): ViewM
         }
     }
 
+    fun readDatabase() {
+        _readArticle = repoInterface.readArticlesFromDB().asLiveData()
+    }
+
     fun insertIntoDatabase(model: Space_ModelItem){
         val articleEntity = ArticleEntity(model)
         CoroutineScope(Dispatchers.IO).launch {
@@ -55,7 +62,6 @@ class MainViewModel @Inject constructor(val repoInterface: RepoInterface): ViewM
         }
     }
 
-    val readArticle: LiveData<List<ArticleEntity>> = repoInterface.readArticlesFromDB().asLiveData()
 
     fun nukeData(){
         CoroutineScope(Dispatchers.IO).launch {

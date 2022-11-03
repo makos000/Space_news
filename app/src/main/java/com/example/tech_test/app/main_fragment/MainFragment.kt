@@ -39,12 +39,13 @@ class MainFragment: Fragment(R.layout.fragment_main) {
 
         if (isNetworkAvailable(requireActivity())){
             viewModel.getData()
-            viewModel._data.observe(requireActivity()){
+            viewModel.data.observe(requireActivity()){
                 adapter = MainAdapter(it,requireActivity())
                 recycler.adapter = adapter
             }
         }
         else{
+            viewModel.readDatabase()
             var list = arrayListOf<Space_ModelItem>()
             viewModel.readArticle.observe(requireActivity()){
                 for (article in it){
