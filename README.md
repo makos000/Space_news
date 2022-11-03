@@ -20,3 +20,7 @@ The app uses https://api.spaceflightnewsapi.net/documentation API to get the lat
 - API: Retrofit, OKHTTP
 - DI: Dagger Hilt
 - Image loading: Glide
+
+### TODO:
+- expand test cases
+- improve DetailFragment UI
